@@ -26,7 +26,7 @@ import android.widget.Toast;
 
 import com.app.elisoft.carprojectprimary.BluetoothUtils.BluetoothChatService;
 import com.app.elisoft.carprojectprimary.BluetoothUtils.Constants;
-import com.app.elisoft.carprojectprimary.DeviceListActivity;
+import com.app.elisoft.carprojectprimary.Activity.DeviceListActivity;
 import com.app.elisoft.carprojectprimary.R;
 
 

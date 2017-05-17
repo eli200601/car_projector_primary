@@ -2,11 +2,10 @@ package com.app.elisoft.carprojectprimary.Utils;
 
 import com.app.elisoft.carprojectprimary.R;
 
-/**
- * Created by eliran.alon on 16-May-17.
- */
 
 public class Keys {
+
+    public static final int NUMBER_OF_COLUMNS = 3;
 
     /* sign Array */
     int[] signs = { R.mipmap.sign_general_alert,

@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -20,14 +22,22 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.app.elisoft.carprojectprimary.Activity.DeviceListActivity;
 import com.app.elisoft.carprojectprimary.BluetoothUtils.BluetoothChatService;
 import com.app.elisoft.carprojectprimary.BluetoothUtils.Constants;
-import com.app.elisoft.carprojectprimary.Activity.DeviceListActivity;
 import com.app.elisoft.carprojectprimary.R;
+import com.app.elisoft.carprojectprimary.Recycler.RecyclerAdapter;
+import com.app.elisoft.carprojectprimary.Recycler.RecyclerCallback;
+import com.app.elisoft.carprojectprimary.Recycler.SignItem;
+import com.app.elisoft.carprojectprimary.Utils.Keys;
+import com.app.elisoft.carprojectprimary.Utils.SharedPrefsUtils;
+
+import java.util.ArrayList;
 
 
 public class MainDashboardFragment extends Fragment {
@@ -38,9 +48,17 @@ public class MainDashboardFragment extends Fragment {
     private static final int REQUEST_ENABLE_BT = 3;
 
     // Layout Views
+    private RecyclerAdapter mAdapter;
+    private RecyclerView mRecyclerView;
+    private ArrayList<SignItem> signsListArray;
+
     private ListView mConversationView;
     private EditText mOutEditText;
     private Button mSendButton;
+
+    private boolean isSignOn = false;
+    private ImageView projectorImageSign;
+
 
     /**
      * Name of the connected device
@@ -74,13 +92,26 @@ public class MainDashboardFragment extends Fragment {
         setHasOptionsMenu(true);
         // Get local Bluetooth adapter
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
         // If the adapter is null, then Bluetooth is not supported
         if (mBluetoothAdapter == null) {
             Activity activity = getActivity();
             Toast.makeText(activity, "Bluetooth is not available", Toast.LENGTH_LONG).show();
             activity.finish();
         }
+        createSignsListArray();
+    }
+
+    public void createSignsListArray(){
+        signsListArray = new ArrayList<>();
+
+        signsListArray.add(new SignItem("kids", R.drawable.kids));
+        signsListArray.add(new SignItem("alert", R.drawable.alert));
+        signsListArray.add(new SignItem("accident", R.drawable.accident));
+        signsListArray.add(new SignItem("alert_yellow", R.drawable.alert_yellow));
+        signsListArray.add(new SignItem("disabled", R.drawable.disabled));
+        signsListArray.add(new SignItem("school", R.drawable.school));
+        signsListArray.add(new SignItem("work", R.drawable.work));
+
     }
 
     @Override
@@ -92,46 +123,64 @@ public class MainDashboardFragment extends Fragment {
             // Otherwise, setup the chat session
         } else if (mChatService == null) {
             Log.d(TAG, "mChatService is null, need to create new");
-            setupChat();
+//            setupChat();
+            mChatService = new BluetoothChatService(getActivity(), mHandler);
         }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.main_dashboard_fragment, container, false);
-//        String status;
-//
-//        BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
-//        if(bluetooth != null)
-//        {
-//            // Continue with bluetooth setup.
-//            Log.d(TAG, "Bluetooth Adapter is not null");
-//            if (bluetooth.isEnabled()) {
-//                // Enabled. Work with Bluetooth.
-//                Log.d(TAG, "Bluetooth is Enable");
-//                bluetooth.setName("MainDashboard");
-//                String myDeviceName = bluetooth.getName();
-//                String myDeviceAddress = bluetooth.getAddress();
-//                String state = String.valueOf(bluetooth.getState());
-//                status = myDeviceAddress + " : " + myDeviceName + " : " + state;
-//                Log.d(TAG, "Status: " + status );
-//            }
-//            else
-//            {
-//                // Disabled. Do something else.
-//                Log.d(TAG, "Bluetooth is Disable");
-//            }
-//        }
+        String viewType = SharedPrefsUtils.getStringPreference(getActivity().getApplicationContext(), Keys.PREF_VIEW_TYPE);
+        View view = null;
+        Log.d(TAG, "viewType = " + viewType);
+        switch (viewType) {
+            case Keys.VIEW_DASHBOARD: {
+                Log.d(TAG, "Creating Dashboard view");
+                view = inflater.inflate(R.layout.fragment_dashboard, container, false);
+//                setHasOptionsMenu(true);
+                mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
+                mRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), Keys.NUMBER_OF_COLUMNS));
+                mRecyclerView.setHasFixedSize(true);
+                mAdapter = new RecyclerAdapter(getActivity().getApplicationContext(), signsListArray);
+                mRecyclerView.setAdapter(mAdapter);
+                mAdapter.setRecyclerCallback(mCallback);
+                mAdapter.notifyDataSetChanged();
+                break;
+            }
+            case Keys.VIEW_PROJECTOR: {
+                //Todo: fill in please
+                Log.d(TAG, "Creating Projector view");
+
+
+
+                view = inflater.inflate(R.layout.fragment_projector, container, false);
+                projectorImageSign = (ImageView) view.findViewById(R.id.imageView);
+                projectorImageSign.setVisibility(View.INVISIBLE);
+                break;
+            }
+
+        }
+
         return view;
     }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
-        mSendButton = (Button) view.findViewById(R.id.button_send);
-        mOutEditText = (EditText) view.findViewById(R.id.edit_text_out);
-        mConversationView = (ListView) view.findViewById(R.id.in);
+//        mSendButton = (Button) view.findViewById(R.id.button_send);
+//        mOutEditText = (EditText) view.findViewById(R.id.edit_text_out);
+//        mConversationView = (ListView) view.findViewById(R.id.in);
 
     }
+
+    private RecyclerCallback mCallback = new RecyclerCallback() {
+        @Override
+        public void sendActionToProjector(SignItem item) {
+            //Need to send message to projector...
+            Log.d(TAG, "Item clicked: " + item.getName());
+            String message = item.getName();
+            sendMessage(message);
+        }
+    };
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
@@ -159,6 +208,7 @@ public class MainDashboardFragment extends Fragment {
                 if (resultCode == Activity.RESULT_OK) {
                     // Bluetooth is now enabled, so set up a chat session
 //                    setupChat();
+                    mChatService = new BluetoothChatService(getActivity(), mHandler);
                 } else {
                     // User did not enable Bluetooth or an error occurred
                     Log.d(TAG, "BT not enabled");
@@ -211,8 +261,8 @@ public class MainDashboardFragment extends Fragment {
             mChatService.write(send);
 
             // Reset out string buffer to zero and clear the edit text field
-            mOutStringBuffer.setLength(0);
-            mOutEditText.setText(mOutStringBuffer);
+//            mOutStringBuffer.setLength(0);
+//            mOutEditText.setText(mOutStringBuffer);
         }
     }
 
@@ -220,31 +270,31 @@ public class MainDashboardFragment extends Fragment {
         Log.d(TAG, "setupChat()");
 
         // Initialize the array adapter for the conversation thread
-        mConversationArrayAdapter = new ArrayAdapter<String>(getActivity(), R.layout.message);
+//        mConversationArrayAdapter = new ArrayAdapter<String>(getActivity(), R.layout.message);
 
-        mConversationView.setAdapter(mConversationArrayAdapter);
+//        mConversationView.setAdapter(mConversationArrayAdapter);
 
         // Initialize the compose field with a listener for the return key
-        mOutEditText.setOnEditorActionListener(mWriteListener);
+//        mOutEditText.setOnEditorActionListener(mWriteListener);
 
         // Initialize the send button with a listener that for click events
-        mSendButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                // Send a message using content of the edit text widget
-                View view = getView();
-                if (null != view) {
-                    TextView textView = (TextView) view.findViewById(R.id.edit_text_out);
-                    String message = textView.getText().toString();
-                    sendMessage(message);
-                }
-            }
-        });
+//        mSendButton.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) {
+//                // Send a message using content of the edit text widget
+//                View view = getView();
+//                if (null != view) {
+//                    TextView textView = (TextView) view.findViewById(R.id.edit_text_out);
+//                    String message = textView.getText().toString();
+//                    sendMessage(message);
+//                }
+//            }
+//        });
 
         // Initialize the BluetoothChatService to perform bluetooth connections
         mChatService = new BluetoothChatService(getActivity(), mHandler);
 
         // Initialize the buffer for outgoing messages
-        mOutStringBuffer = new StringBuffer("");
+//        mOutStringBuffer = new StringBuffer("");
     }
 
 
@@ -310,6 +360,14 @@ public class MainDashboardFragment extends Fragment {
         return false;
     }
 
+    public int getImageResourceFromString(String message) {
+        int id = 0;
+        for (SignItem item: signsListArray) {
+            if (item.getName().equals(message)) id = item.getImage();
+        }
+        return id;
+    }
+
     /**
      * The Handler that gets information back from the BluetoothChatService
      */
@@ -322,7 +380,7 @@ public class MainDashboardFragment extends Fragment {
                     switch (msg.arg1) {
                         case BluetoothChatService.STATE_CONNECTED:
 //                            setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
-                            mConversationArrayAdapter.clear();
+//                            mConversationArrayAdapter.clear();
                             break;
                         case BluetoothChatService.STATE_CONNECTING:
 //                            setStatus(R.string.title_connecting);
@@ -337,13 +395,24 @@ public class MainDashboardFragment extends Fragment {
                     byte[] writeBuf = (byte[]) msg.obj;
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
-                    mConversationArrayAdapter.add("Me:  " + writeMessage);
+//                    mConversationArrayAdapter.add("Me:  " + writeMessage);
                     break;
                 case Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
-                    mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);
+                    Log.d(TAG, "Message got: " + readMessage);
+                    //TODO: hare i got messages....
+                    if (isSignOn) {
+                        isSignOn = false;
+                        projectorImageSign.setVisibility(View.GONE);
+                    } else {
+                        isSignOn = true;
+                        projectorImageSign.setVisibility(View.VISIBLE);
+                        projectorImageSign.setImageResource(getImageResourceFromString(readMessage));
+                    }
+
+//                    mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);
                     break;
                 case Constants.MESSAGE_DEVICE_NAME:
                     // save the connected device's name

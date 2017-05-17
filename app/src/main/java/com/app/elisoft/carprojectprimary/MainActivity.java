@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Window;
+import android.view.WindowManager;
 
 import com.app.elisoft.carprojectprimary.Activity.OnBoardingActivity;
 import com.app.elisoft.carprojectprimary.Fragment.MainDashboardFragment;
@@ -44,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
                 setContentView(R.layout.activity_main);
 
                 toolbar = (Toolbar) findViewById(R.id.toolbar);
-                toolbar.setTitle("Car Projector");
+                toolbar.setTitle("Car Projector - Dashboard");
                 setSupportActionBar(toolbar);
 
                 getFragmentManager().beginTransaction().replace(R.id.fragment_container, new MainDashboardFragment()).commit();
@@ -52,6 +54,16 @@ public class MainActivity extends AppCompatActivity {
             }
             case Keys.VIEW_PROJECTOR: {
                 // To be done
+                requestWindowFeature(Window.FEATURE_NO_TITLE);
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+                setContentView(R.layout.activity_main);
+
+//                toolbar = (Toolbar) findViewById(R.id.toolbar);
+//                toolbar.setTitle("Car Projector - Projector");
+//                setSupportActionBar(toolbar);
+
+                getFragmentManager().beginTransaction().replace(R.id.fragment_container, new MainDashboardFragment()).commit();
                 break;
             }
         }

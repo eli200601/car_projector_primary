@@ -18,6 +18,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -34,6 +36,7 @@ import com.app.elisoft.carprojectprimary.R;
 import com.app.elisoft.carprojectprimary.Recycler.RecyclerAdapter;
 import com.app.elisoft.carprojectprimary.Recycler.RecyclerCallback;
 import com.app.elisoft.carprojectprimary.Recycler.SignItem;
+import com.app.elisoft.carprojectprimary.Utils.Helper;
 import com.app.elisoft.carprojectprimary.Utils.Keys;
 import com.app.elisoft.carprojectprimary.Utils.SharedPrefsUtils;
 
@@ -58,7 +61,9 @@ public class MainDashboardFragment extends Fragment {
 
     private boolean isSignOn = false;
     private ImageView projectorImageSign;
-
+    private ImageView alertLampOne, alertLampTwo;
+    AlphaAnimation fadeIn = new AlphaAnimation(0.0f , 1.0f ) ;
+    AlphaAnimation fadeOut = new AlphaAnimation( 1.0f , 0.0f ) ;
 
     /**
      * Name of the connected device
@@ -154,7 +159,9 @@ public class MainDashboardFragment extends Fragment {
 
 
                 view = inflater.inflate(R.layout.fragment_projector, container, false);
-                projectorImageSign = (ImageView) view.findViewById(R.id.imageView);
+                projectorImageSign = (ImageView) view.findViewById(R.id.main_sign);
+                alertLampOne = (ImageView) view.findViewById(R.id.lamp_one);
+                alertLampTwo = (ImageView) view.findViewById(R.id.lamp_two);
                 projectorImageSign.setVisibility(View.INVISIBLE);
                 break;
             }
@@ -266,41 +273,6 @@ public class MainDashboardFragment extends Fragment {
         }
     }
 
-    private void setupChat() {
-        Log.d(TAG, "setupChat()");
-
-        // Initialize the array adapter for the conversation thread
-//        mConversationArrayAdapter = new ArrayAdapter<String>(getActivity(), R.layout.message);
-
-//        mConversationView.setAdapter(mConversationArrayAdapter);
-
-        // Initialize the compose field with a listener for the return key
-//        mOutEditText.setOnEditorActionListener(mWriteListener);
-
-        // Initialize the send button with a listener that for click events
-//        mSendButton.setOnClickListener(new View.OnClickListener() {
-//            public void onClick(View v) {
-//                // Send a message using content of the edit text widget
-//                View view = getView();
-//                if (null != view) {
-//                    TextView textView = (TextView) view.findViewById(R.id.edit_text_out);
-//                    String message = textView.getText().toString();
-//                    sendMessage(message);
-//                }
-//            }
-//        });
-
-        // Initialize the BluetoothChatService to perform bluetooth connections
-        mChatService = new BluetoothChatService(getActivity(), mHandler);
-
-        // Initialize the buffer for outgoing messages
-//        mOutStringBuffer = new StringBuffer("");
-    }
-
-
-
-
-
     @Override
     public void onResume() {
         super.onResume();
@@ -406,10 +378,27 @@ public class MainDashboardFragment extends Fragment {
                     if (isSignOn) {
                         isSignOn = false;
                         projectorImageSign.setVisibility(View.GONE);
+                        fadeIn.cancel();
+                        fadeIn.reset();
+                        fadeOut.cancel();
+                        fadeOut.reset();
+                        alertLampOne.setVisibility(View.INVISIBLE);
+                        alertLampTwo.setVisibility(View.INVISIBLE);
                     } else {
                         isSignOn = true;
+                        projectorImageSign.setImageBitmap(Helper.decodeSampledBitmapFromResource(getResources(), getImageResourceFromString(readMessage), 400, 400));
                         projectorImageSign.setVisibility(View.VISIBLE);
-                        projectorImageSign.setImageResource(getImageResourceFromString(readMessage));
+
+                        fadeIn.setRepeatCount(Animation.INFINITE);
+                        fadeOut.setRepeatCount(Animation.INFINITE);
+                        fadeIn.setDuration(500);
+                        fadeOut.setDuration(500);
+                        fadeOut.setStartOffset(300+fadeIn.getStartOffset()+300);
+                        alertLampOne.startAnimation(fadeIn);
+                        alertLampOne.startAnimation(fadeOut);
+                        alertLampTwo.startAnimation(fadeIn);
+                        alertLampTwo.startAnimation(fadeOut);
+
                     }
 
 //                    mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);

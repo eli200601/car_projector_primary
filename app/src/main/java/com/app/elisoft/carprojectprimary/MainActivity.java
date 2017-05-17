@@ -59,9 +59,10 @@ public class MainActivity extends AppCompatActivity {
 
                 setContentView(R.layout.activity_main);
 
-//                toolbar = (Toolbar) findViewById(R.id.toolbar);
-//                toolbar.setTitle("Car Projector - Projector");
-//                setSupportActionBar(toolbar);
+                toolbar = (Toolbar) findViewById(R.id.toolbar);
+                toolbar.setTitle("Car Projector - Projector");
+                toolbar.setBackgroundColor(getResources().getColor(R.color.colorBlack));
+                setSupportActionBar(toolbar);
 
                 getFragmentManager().beginTransaction().replace(R.id.fragment_container, new MainDashboardFragment()).commit();
                 break;
